@@ -10,10 +10,11 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QLabel,
     QMenu,
-    QLineEdit
+    QLineEdit,
+    QDockWidget
 )
 
-from PyQt6.QtGui import QIcon
+from PyQt6.QtGui import QIcon, QAction
 from PyQt6.QtCore import Qt
 
 # Interface
@@ -40,6 +41,7 @@ class MainWindow(QMainWindow):
 
         self.inicializar_interface()
         self.criar_menu()
+        self.criar_toolbar()
 
     def inicializar_interface(self):
 
@@ -66,8 +68,11 @@ class MainWindow(QMainWindow):
         self.tabs.setTabsClosable(True)
         self.tabs.tabCloseRequested.connect(self.fechar_aba)
 
-        layout.addWidget(self.tree, 2)
-        layout.addWidget(self.tabs, 5)
+        dock = QDockWidget('Conexões', self)
+        dock.setWidget(self.tree)
+        self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, dock)
+        
+        layout.addWidget(self.tabs)
 
         container.setLayout(layout_principal)
 
@@ -114,11 +119,11 @@ class MainWindow(QMainWindow):
 
             servidor = QTreeWidgetItem(grupo_item)
             servidor.setText(0, nome)
-            servidor.setData(
+            servidor.setData(0,Qt.ItemDataRole.UserRole,
                 {
-                    'nome':nome,
-                    'host':host,
-                    'protocolo':protocolo
+                    "nome": nome,
+                    "host": host,
+                    "protocolo": protocolo
                 }
             )
 
@@ -214,7 +219,7 @@ class MainWindow(QMainWindow):
             dados = item.data(0, Qt.ItemDataRole.UserRole)
             nome = dados['nome']
             self.connection_service.excluir_conexao(nome)
-            self.carregar_servidores
+            self.carregar_servidores()
 
     def filtrar_servidores(self, texto):
 
@@ -253,14 +258,25 @@ class MainWindow(QMainWindow):
                     if online:
 
                         servidor.setIcon(0, QIcon("assets/icons/online.png"))
-
+                        self.statusBar().showMessage(f'{host} está ONLINE')
                     else:
-
                         servidor.setIcon(0, QIcon("assets/icons/offline.png"))
-
+                        self.statusBar().showMessage(f'{host} está OFFLINE')
     def iniciar_monitoramento(self):
         if not self.hosts:
             return
         self.worker = PingWorker(self.hosts)
         self.worker.status_atualizado.connect(self.atualizar_status)
         self.worker.start()
+
+    def criar_toolbar(self):
+        toolbar = self.addToolBar('Principal')
+
+        nova = QAction(QIcon('assets/icons/add.png'), 'Nova', self)
+        nova.triggered.connect(self.nova_conexoes)
+
+        atualizar = QAction(QIcon('assets/icons/refresh.png'), 'Atualizar', self)
+        atualizar.triggered.connect(self.carregar_servidores)
+
+        toolbar.addAction(nova)        
+        toolbar.addAction(atualizar)        

@@ -21,6 +21,7 @@ class NovaConexao(QDialog):
         self.host = QLineEdit()
         self.usuario = QLineEdit()
         self.senha = QLineEdit()
+        self.senha.setEchoMode(QLineEdit.echoMode.Password)
         self.porta = QLineEdit()
         self.grupo = QLineEdit()
         
