@@ -69,6 +69,10 @@ class MainWindow(QMainWindow):
         self.tabs.tabCloseRequested.connect(self.fechar_aba)
 
         dock = QDockWidget('Conexões', self)
+        dock.setFeatures(
+        QDockWidget.DockWidgetFeature.DockWidgetMovable |
+        QDockWidget.DockWidgetFeature.DockWidgetFloatable
+)
         dock.setWidget(self.tree)
         self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, dock)
         
@@ -263,11 +267,22 @@ class MainWindow(QMainWindow):
                         servidor.setIcon(0, QIcon("assets/icons/offline.png"))
                         self.statusBar().showMessage(f'{host} está OFFLINE')
     def iniciar_monitoramento(self):
+        if hasattr(self, 'worker'):
+            self.worker.stop()
+            self.worker.wait()
+        
         if not self.hosts:
             return
+        
         self.worker = PingWorker(self.hosts)
         self.worker.status_atualizado.connect(self.atualizar_status)
         self.worker.start()
+        
+    def closeEvent(self, event):
+        if hasattr(self, 'worker'):
+            self.worker.stop()
+            self.worker.wait()
+        self.event.accept()
 
     def criar_toolbar(self):
         toolbar = self.addToolBar('Principal')
